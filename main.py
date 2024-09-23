@@ -48,10 +48,10 @@ def main():
 
     # create model
     ## EfficientFace
-    model_cla = EfficientFace.efficient_face()
+    model_cla = EfficientFace.efficient_face()#create the model 
     model_cla.fc = nn.Linear(1024, 12666)
     model_cla = torch.nn.DataParallel(model_cla).cuda()
-    checkpoint = torch.load('./checkpoint/Pretrained_EfficientFace.tar')
+    checkpoint = torch.load('./checkpoint/models/Pretrained_EfficientFace.tar')
     pre_trained_dict = checkpoint['state_dict']
     model_cla.load_state_dict(pre_trained_dict)
     model_cla.module.fc = nn.Linear(1024, 7).cuda()
@@ -59,7 +59,7 @@ def main():
     model_dis = resnet.resnet50()
     model_dis.fc = nn.Linear(2048, 7)
     model_dis = torch.nn.DataParallel(model_dis).cuda()
-    checkpoint = torch.load('./checkpoint/Pretrained_LDG.tar')
+    checkpoint = torch.load('./checkpoint/models/Pretrained_LDG.tar')
     model_dis.load_state_dict(checkpoint['state_dict'])
 
     # define loss function (criterion) and optimizer
@@ -149,7 +149,11 @@ def main():
         with open(txt_name, 'a') as f:
             f.write('Current best accuracy: ' + str(best_acc.item()) + '\n')
 
-        save_checkpoint({'state_dict': model_cla.state_dict()}, is_best, args)
+        save_checkpoint({'state_dict': model_cla.state_dict(),
+                          'epoch':epoch,                       # save the epoch
+                          'best_acc': best_acc,                # Save best accuracy
+                          'optimizer': optimizer.state_dict(), # Save optimizer state
+                          'recorder': recorder  }, is_best, args)
         end_time = time.time()
         epoch_time = end_time - start_time
         print("An Epoch Time: ", epoch_time)
@@ -310,7 +314,7 @@ def accuracy(output, target, topk=(1,)):
         correct = pred.eq(target.view(1, -1).expand_as(pred))
         res = []
         for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
