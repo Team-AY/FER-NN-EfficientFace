@@ -166,3 +166,6 @@ models/
 checkpoints/
 
 results/*.pth
+
+database
+database/*
